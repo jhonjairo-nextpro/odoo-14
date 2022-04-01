@@ -18,7 +18,8 @@ Generar estructura del codigo del lote / Generar estructura de lote en Fabricaci
         'product',
         'mrp',
         'purchase',
-        'sale'
+        'sale',
+        'product_expiry'
     ],
     'data': [
         'security/ir.model.access.csv',
