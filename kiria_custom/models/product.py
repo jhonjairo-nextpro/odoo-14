@@ -158,23 +158,7 @@ class ProductionLot(models.Model):
         if 'default_order_id_purchase' in self.env.context:
             for vals_list_id in vals_list:
                 order_id_purchase = self.env['purchase.order'].search([('id', '=', self.env.context['default_order_id_purchase'])])
-                _logger.info(f"""
-                
-                
 
-                {self.env.context}
-                {product_id}
-                {product_id.product_initials}
-                {product_id.product_initials.name}
-                {product_id.conventional_organic}
-                {product_id.conventional_organic.name}
-                {order_id_purchase}
-                {order_id_purchase.partner_id.code_client_provider}
-                {order_id_purchase.partner_id.code_client_provider}
-                
-                
-
-                """)
                 correlative = product_id.product_initials.name + product_id.conventional_organic.name + order_id_purchase.partner_id.code_client_provider
                 correlative_lote_seq = product_id.correlative_lote_seq.filtered(
                     lambda c: c.name == order_id_purchase.partner_id) if product_id.correlative_lote_seq else False
