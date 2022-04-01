@@ -57,7 +57,7 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        if vals['conventional_organic'] and vals['product_initials'] and vals['category_initials'] and not vals['correlative']:
+        if vals.get('conventional_organic', False) and vals.get('product_initials', False) and vals.get('category_initials', False) and not vals.get('correlative', False):
             correlative = self._get_next_code_product_barcode()
             vals['correlative'] = correlative
         res = super(ProductTemplate, self).create(vals)
