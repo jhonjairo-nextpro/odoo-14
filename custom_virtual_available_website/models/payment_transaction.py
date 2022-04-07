@@ -12,14 +12,27 @@ class PaymentTransaction(models.Model):
     @api.model
     def create(self, vals):
         res =  super(PaymentTransaction, self).create(vals)
-        for order in res.sale_order_ids:
-            _logger.info(f"""
+        products = res.sale_order_ids.order_line.mapped('product_id.product_template_id')
+        _logger.info(f"""
+        
+        
+        
 
+        {products}
 
-            ORDER
-            {order.name}
+        
+        
+        """)
+        ctx = products.self._context.get('payment_transation')
+        _logger.info(f"""
+        
+        
+        
 
-            
-            """)
+        {ctx}
+
+        
+        
+        """)
         return res
     

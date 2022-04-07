@@ -15,7 +15,8 @@ class ProductTemplate(models.Model):
         'product_variant_ids.stock_move_ids.product_qty',
         'product_variant_ids.stock_move_ids.state',
     )
-    @api.depends_context('company', 'location', 'warehouse')
+    @api.depends_context('company', 'location', 'warehouse', 'payment_transation')
+    # @api.depends_context('company', 'location', 'warehouse')
     def _compute_quantities(self):
         _logger.info(f"""
         
