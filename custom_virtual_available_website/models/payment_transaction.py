@@ -12,7 +12,7 @@ class PaymentTransaction(models.Model):
     @api.model
     def create(self, vals):
         res =  super(PaymentTransaction, self).create(vals)
-        products = res.sale_order_ids.order_line.mapped('product_id.product_template_id')
+        products = res.sale_order_ids.order_line.mapped('product_id.product_tmpl_id')
         _logger.info(f"""
         
         
