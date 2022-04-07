@@ -1,6 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_client_provider,access_client_provider,model_client_provider,base.group_user,1,1,1,1
-access_product_initials,access_product_initials,model_product_initials,base.group_user,1,1,1,1
-access_category_initials,access_category_initials,model_category_initials,base.group_user,1,1,1,1
-access_conventional_organic,access_conventional_organic,model_conventional_organic,base.group_user,1,1,1,1
-access_correlative_lote,access_correlative_lote,model_correlative_lote,base.group_user,1,1,1,1
