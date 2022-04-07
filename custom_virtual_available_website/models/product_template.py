@@ -24,10 +24,10 @@ class ProductTemplate(models.Model):
         
         
         """)
-        # super(ProductTemplate, self)._compute_quantities()
-        res = self._compute_quantities_dict()
-        for template in self:
-            template.qty_available = res[template.id]['qty_available']
-            template.virtual_available = res[template.id]['virtual_available']
-            template.incoming_qty = res[template.id]['incoming_qty']
-            template.outgoing_qty = res[template.id]['outgoing_qty']
+        super(ProductTemplate, self)._compute_quantities()
+        # res = self._compute_quantities_dict()
+        # for template in self:
+        #     template.qty_available = res[template.id]['qty_available']
+        #     template.virtual_available = res[template.id]['virtual_available']
+        #     template.incoming_qty = res[template.id]['incoming_qty']
+        #     template.outgoing_qty = res[template.id]['outgoing_qty']
