@@ -17,7 +17,7 @@ class ProductTemplate(models.Model):
     )
     @api.depends_context('company', 'location', 'warehouse')
     def _compute_quantities(self):
-        _logger.info("""
+        _logger.info(f"""
         
         
         {self.env.context}
