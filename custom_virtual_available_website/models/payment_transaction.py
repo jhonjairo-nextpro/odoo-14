@@ -35,12 +35,13 @@ class PaymentTransaction(models.Model):
         
         """)
         products.with_context({'payment_transation': True})
-        ctx = products._context.get('payment_transation')
+        ctx = products._context.get('payment_transation', False)
         _logger.info(f"""
         
         
         
         CONTEXT 1
+        {products._context}
         {ctx}
 
         
