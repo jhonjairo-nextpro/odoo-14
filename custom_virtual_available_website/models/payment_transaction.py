@@ -17,7 +17,7 @@ class PaymentTransaction(models.Model):
         
         
         
-
+        PRODUCT
         {products}
 
         
@@ -28,7 +28,19 @@ class PaymentTransaction(models.Model):
         
         
         
+        CONTEXT 0
+        {ctx}
 
+        
+        
+        """)
+        products.with_context({'payment_transation': True})
+        ctx = products._context.get('payment_transation')
+        _logger.info(f"""
+        
+        
+        
+        CONTEXT 1
         {ctx}
 
         

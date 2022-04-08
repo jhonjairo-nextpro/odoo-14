@@ -20,7 +20,7 @@ class ProductTemplate(models.Model):
     def _compute_quantities(self):
         _logger.info(f"""
         
-        
+        CONTEXT COMPUTE
         {self.env.context}
         
         
