@@ -23,7 +23,7 @@ class PaymentTransaction(models.Model):
         
         
         """)
-        ctx = products.self._context.get('payment_transation')
+        ctx = products._context.get('payment_transation')
         _logger.info(f"""
         
         
