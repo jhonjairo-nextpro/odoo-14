@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    <!-- Distritos PE -->	
+	    <record id="view_res_city_district_tree" model="ir.ui.view">
+            <field name="name">Distritos PE</field>
+            <field name="model">l10n_pe.res.city.district</field>
+            <field name="arch" type="xml">
+                <tree string="Distritos PE">
+                    <field name="name"/>
+                    <field name="city_id"/>
+                    <field name="code"/>
+                </tree>
+            </field>
+	    </record>        
+	    <record id="view_res_city_district_form" model="ir.ui.view">
+            <field name="name">Distritos PE</field>
+            <field name="model">l10n_pe.res.city.district</field>            
+            <field name="arch" type="xml">
+                <form string="Distritos PE">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="city_id"/>
+                        <field name="code"/>
+                    </group>
+                </sheet>                
+                </form>	
+            </field>
+	    </record>        
+
+	    <record model="ir.actions.act_window" id="res_city_district_action">
+		    <field name="name">Distritos PE</field>
+		    <field name="res_model">l10n_pe.res.city.district</field>
+		    <field name="view_mode">tree,form</field>
+	    </record>
+
+        <!-- Menu -->
+
+        <!--SUBSUBMENU: PLANTILLAS DE CONFIGURACION -->
+        <record id="menu_settings_district" model="ir.ui.menu">
+            <field name="name">Distritos PE</field>
+            <field name="action" ref="res_city_district_action"/>
+            <field name="parent_id" ref="website.menu_website_global_configuration"/>
+        </record>
+      
+    </data>
+</openerp>

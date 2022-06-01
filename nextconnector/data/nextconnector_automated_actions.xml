@@ -1,0 +1,72 @@
+
+<odoo>
+<data noupdate="1">    
+    <!-- ACCIONES AUTOMATIZADA -->
+    <record id="base_automation_create_or_update_res_partner" model="base.automation">
+        <field name="name">NextConnector - Customer</field>
+        <field name="trigger">on_create_or_write</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="active">False</field>
+        <field name="code"> action = record.synchronize_customer()</field>
+    </record>
+
+    <record id="base_automation_create_or_update_sale_order" model="base.automation">
+        <field name="name">NextConnector - Sale Order</field>
+        <field name="trigger">on_create_or_write</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="state">code</field>
+        <field name="code">
+        if record.state == 'sale':
+            record.synchronize_record()
+        </field>
+    </record>
+
+    <record id="base_automation_create_or_update_invoice" model="base.automation">
+        <field name="name">NextConnector - Account Move (Factura)</field>
+        <field name="trigger">on_create_or_write</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">
+        if record.state == 'posted' and record.type == 'out_invoice':
+            action = record.synchronize_record()
+        </field>
+    </record>
+
+    <record id="base_automation_create_or_update_payment" model="base.automation">
+        <field name="name">NextConnector - Account Payment (Pago)</field>
+        <field name="trigger">on_create_or_write</field>
+        <field name="model_id" ref="account.model_account_payment"/>
+        <field name="state">code</field>
+        <field name="code">
+        if record.state == 'posted' and record.payment_type == 'inbound':
+            action = record.synchronize_record()
+        </field>
+    </record>
+
+    <record id="base_automation_nxt_id_erp_res_partner" model="base.automation">
+        <field name="name">NextConnector - Customer Codigo ERP</field>
+        <field name="trigger">on_create_or_write</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="active">False</field>
+        <field name="code"><![CDATA[ 
+if record.vat:
+  if (record.nxt_id_erp != "C" + record.vat) and record.vat:
+      record.write({"nxt_id_erp": "C" + record.vat})
+        ]]></field>
+    </record>
+
+    <record id="base_automation_write_record_queue" model="base.automation">
+        <field name="name">NextConnector - Cola de sincronización de registros</field>
+        <field name="trigger">on_create_or_write</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="active">True</field>
+        <field name="code"><![CDATA[ 
+record.write_record_queue()
+        ]]></field>
+    </record>
+
+</data>    
+</odoo>

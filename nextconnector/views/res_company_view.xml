@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_form_company_inherited" model="ir.ui.view">
+            <field name="name">res.company.inherit</field>
+            <field name="model">res.company</field>
+            <field name="inherit_id" ref="base.view_company_form"/>
+            <field name="arch" type="xml">
+            <xpath expr="//page[1]" position="after">
+                <page string="Configuración de Next-connector" groups="account.group_account_manager">
+                    <group>
+                        <group>
+                            <field name="env_production" />
+                            <field name="url_api" />
+                            <field name="user_api" />
+                            <field name="pwd_api" />
+                        </group>                       
+                    </group> 
+                </page>
+            </xpath>            
+            </field>
+        </record>
+    </data>
+</odoo>

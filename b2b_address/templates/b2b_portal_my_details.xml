@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo> 
+
+    <!-- CAMPOS DE DATOS DE PORTAL -->
+    <template inherit_id="portal.portal_my_details" id="custom_portal_portal_my_details">
+        <data inherit_id="portal.portal_my_details" name="Disabled fiscal information fields" customize_show="True">
+
+            <xpath expr="//div[@class='row'][1]/div[2]" position="replace">
+                <div t-attf-class="form-group #{error.get('name') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label" for="name">Nombre</label>
+                    <input type="text" name="name" t-attf-class="form-control #{error.get('name') and 'is-invalid' or ''}" t-att-value="name or partner.name" t-att-readonly="'1'"/>
+                </div>
+            </xpath> 
+
+            <xpath expr="//div[3]" position="replace">
+                <div t-attf-class="form-group #{error.get('email') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label" for="email">Correo electrónico</label>
+                    <input type="email" name="email" t-attf-class="form-control #{error.get('email') and 'is-invalid' or ''}" t-att-value="email or partner.email" t-att-readonly="'1'"/>
+                </div>
+            </xpath> 
+
+            <xpath expr="//div[6]" position="replace">
+                <div t-attf-class="form-group #{error.get('vat') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label label-optional" for="vat">RUC/Cédula</label>
+                    <input type="text" name="vat" t-attf-class="form-control #{error.get('vat') and 'is-invalid' or ''}" t-att-value="vat or partner.vat" t-att-readonly="'1'" t-att-title="None if partner.can_edit_vat() else 'Changing VAT number is not allowed once document(s) have been issued for your account. Please contact us directly for this operation.'"/>
+                </div>
+            </xpath> 
+            <xpath expr="//div[7]" position="replace">
+                <div t-attf-class="form-group #{error.get('phone') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label" for="phone">Telefono</label>
+                    <input type="tel" maxlength="20" name="phone" t-attf-class="form-control #{error.get('phone') and 'is-invalid' or ''}" t-att-value="phone or partner.phone" t-att-readonly="'1'" />
+                </div>
+            </xpath> 
+            <xpath expr="//div[9]" position="replace">
+                <div t-attf-class="form-group #{error.get('street') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label" for="street">Calle/Dirección</label>
+                    <input type="text" name="street" t-attf-class="form-control #{error.get('street') and 'is-invalid' or ''}" t-att-value="street or partner.street" t-att-readonly="'1'" />
+                </div>
+            </xpath> 
+            <xpath expr="//div[10]" position="replace">
+                <div t-attf-class="form-group #{error.get('city') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label" for="city">Ciudad</label>
+                    <input type="text" name="city" t-attf-class="form-control #{error.get('city') and 'is-invalid' or ''}" t-att-value="city or partner.city" t-att-readonly="'1'" />
+                </div>
+            </xpath> 
+            
+            <xpath expr="//div[12]" position="replace">
+                <div t-attf-class="form-group #{error.get('country_id') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label" for="country_id">Pais</label>
+                    <select name="country_id" t-attf-class="form-control #{error.get('country_id') and 'is-invalid' or ''}" t-att-disabled="'1'">
+                        <option value="">Pais...</option>
+                        <t t-foreach="countries or []" t-as="country">
+                            <option t-att-value="country.id" t-att-selected="country.id == int(country_id) if country_id else country.id == partner.country_id.id">
+                                <t t-esc="country.name"/>
+                            </option>
+                        </t>
+                    </select>
+                </div>
+            </xpath> 
+            
+            <xpath expr="//div[13]" position="replace">
+                <div t-attf-class="form-group #{error.get('state_id') and 'o_has_error' or ''} col-xl-6">
+                    <label class="col-form-label label-optional" for="state_id">Provincia</label>
+                    <select name="state_id" t-attf-class="form-control #{error.get('state_id') and 'is-invalid' or ''}" t-att-disabled="'1'">
+                        <option value="">Seleccionar...</option>
+                        <t t-foreach="states or []" t-as="state">
+                            <option t-att-value="state.id" style="display:none;" t-att-data-country_id="state.country_id.id" t-att-selected="state.id == partner.state_id.id">
+                                <t t-esc="state.name"/>
+                            </option>
+                        </t>
+                    </select>
+                </div>
+            </xpath>
+            
+            <xpath expr="//button[@class='btn btn-primary float-right mb32 '][1]" position="replace">
+            </xpath> 
+
+            <xpath expr="//div[@class='alert alert-danger'][1]" position="replace">
+                <div class="alert alert-warning" role="alert">
+                    <p>
+                        Sus datos de <b>facturación y envío</b><br/>
+                        Serán solicitados antes de pagar el pedido.
+                    </p>
+                </div>
+            </xpath> 
+
+            <xpath expr="//div[11]" position="replace">
+            </xpath> 
+            
+            <xpath expr="//div[5]" position="replace">
+            </xpath> 
+        </data>
+    </template>
+    
+</odoo>
+

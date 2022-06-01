@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="website_sale_delivery.payment_delivery_methods" model="ir.ui.view">
+        <field name="arch" type="xml">
+            <data name="Metodo de entrega">
+                <input t-att-value="delivery.id" t-att-id="'delivery_%i' % delivery.id" type="radio" name="delivery_type" t-att-checked="order.carrier_id and order.carrier_id.id == delivery.id and 'checked' or False" t-att-class="'d-none' if delivery_nb == 1 else ''" t-att-data-retiro_en_tienda="'true' if delivery.retiro_en_tienda or delivery.envio_por_courier else 'false'"/>
+                <label class="label-optional" t-field="delivery.name"/>
+                <t t-set='badge_class' t-value="(delivery_nb != 1 and 'float-right ' or '') + 'badge badge-secondary'"/>
+                <t t-if="delivery.delivery_type == 'fixed'">
+                    <span t-if="delivery.fixed_price > 0.0" t-att-class="badge_class">
+                        <t t-esc="delivery.rate_shipment(website_sale_order)['price'] if delivery.free_over else delivery.fixed_price" t-options='{"widget": "monetary",
+                            "from_currency": website_sale_order.currency_id if delivery.free_over else delivery.product_id.company_id.currency_id or website_sale_order.company_id.currency_id,
+                            "display_currency": website_sale_order.currency_id}'/>
+                    </span>
+                    <span t-else="" t-att-class="badge_class">Free</span>
+                </t>
+                <t t-else="">
+                    <span t-attf-class="#{badge_class} o_wsale_delivery_badge_price">Elegir un método de entrega</span>
+                </t>
+                <t t-if="delivery.website_description">
+                    <div t-field="delivery.website_description" class="text-muted mt8" style="overflow: hidden;max-height: 0;transition: all 0.2s ease-in;"/>
+                </t>
+            </data>
+        </field>
+    </record>
+    <record id="website_sale_delivery.payment_delivery" model="ir.ui.view">
+        <field name="arch" type="xml">
+            <data name="Delivery Costs">
+                <xpath expr="//div[@id='shipping_and_billing']" position="inside">
+                    <t t-set="delivery_nb" t-value="deliveries and len(deliveries)"/>
+                    <div t-if="delivery_nb == 1" id="delivery_carrier" class="mt4">
+                        <b>Método de envío:</b>
+                        <t t-foreach="deliveries" t-as="delivery">
+                            <t t-call="website_sale_delivery.payment_delivery_methods"/>
+                        </t>
+                    </div>
+                </xpath>
+                <xpath expr="//div[@id='payment_method']" position="before">
+                    <div t-if="deliveries" id="delivery_carrier" data-init="1">
+                        <t t-set="delivery_nb" t-value="len(deliveries)"/>
+                        <h3 t-if="delivery_nb &gt; 1" class="mb24">Elija un método de entrega</h3>
+                        <div t-if="delivery_nb &gt; 1" class="card border-0" id="delivery_method">
+                            <ul class="list-group">
+                                <t t-foreach="deliveries" t-as="delivery">
+                                    <li class="list-group-item o_delivery_carrier_select">
+                                        <t t-call="website_sale_delivery.payment_delivery_methods"/>
+                                    </li>
+                                </t>
+                            </ul>
+                        </div>
+                    </div>
+                </xpath>
+                <!-- we shouldn't be able to pay if there is no way to deliver -->
+                <xpath expr="//div[@id='payment_method']" position="attributes">
+                    <attribute name="t-att-style">'display: none!important' if not deliveries and delivery_has_storable else ''</attribute>
+                </xpath>
+            </data>
+        </field>
+    </record>
+    <!-- DATOS DE QUIEN RETIRA O QUIEN RECIBE -->
+    <template id="list_payment" inherit_id="website_sale.payment">
+        <xpath expr="//div[@id='payment_method']" position="before">
+            <br/>
+            <input type="hidden" id="is_site_b2b" name="is_site_b2b" t-att-value="'true' if website_sale_order.website_id.is_site_b2b else 'false'"/>
+            <input type="hidden" id="current_carrier_id" name="current_carrier_id" t-att-value="'0' if not website_sale_order.carrier_id else str(website_sale_order.carrier_id.id)"/>
+            <input type="hidden" id="retiro_en_tienda" name="retiro_en_tienda" t-att-value="'true' if website_sale_order.carrier_id.retiro_en_tienda or website_sale_order.carrier_id.envio_por_courier else 'false'"/>
+            <input type="hidden" id="commitment_date" name="commitment_date" t-att-value="'' if not website_sale_order.commitment_date else website_sale_order.commitment_date.strftime('%m/%d/%Y')"/>
+            <input type="hidden" id="commitment_date_js" name="commitment_date_js" t-att-value="'' if not website_sale_order.commitment_date else website_sale_order.commitment_date.strftime('%d/%m/%Y')"/>
+            <input type="hidden" id="lead_time_despacho" name="lead_time_despacho" t-att-value="website_sale_order.get_lead_time_despacho()"/>
+            <div class="card">
+                <t t-if="not website_sale_order.website_id.is_site_b2b">
+                    <div class="card-body" t-if="not website_sale_order.website_id.is_site_b2b">
+                        <label class="d-inline mr-2" for="Custom Fecha">Fecha de Entrega</label>
+                        <div class='input-group date'>
+                            <input type='text' required="true" class="form-control" id='delivery_date' name="delivery_date" readonly="True"/>
+                            <span class="input-group-text" id="delivery_date_icon">
+                                <i class="fa fa-calendar"/>
+                            </span>
+                        </div>
+                        <div>
+                            <span style="font-size:10px;color:red;">Si la fecha de entrega es en un feriado, su pedido será programado para el siguiente primer día laborable.</span>
+                        </div>
+                    </div>
+                </t>
+                <t t-if="website_sale_order.carrier_id.retiro_en_tienda or website_sale_order.carrier_id.envio_por_courier">
+                    <h5 t-if="website_sale_order.carrier_id.retiro_en_tienda" class="d-inline ml-3 mt-2 mb-0">Datos de persona que retira en Tienda:</h5>
+                    <h5 t-if="website_sale_order.carrier_id.envio_por_courier" class="d-inline ml-3 mt-2 mb-0">Datos de persona para envio por Courier:</h5>
+                    <div class="card-body">
+                        <t t-if="website_sale_order.carrier_id.envio_por_courier">
+                            <div class="row s_col_no_resize s_col_no_bgcolor" style="margin:1px">
+                                <label class="col-form-label col-lg-4 col-md-4 col-sm-12 col-xs-12 s_website_form_label" style="width: 200px;padding-left:0px">
+                                    <span class="s_website_form_label_content">Nombre de Agencia:</span>
+                                </label>
+                                <t t-set="dict_agencies" t-value="request.env['shipping.agencies'].sudo().search([])"/>
+                                <select type="tel" class="col-lg-8 col-md-8 col-sm-12 col-xs-12 form-control s_website_form_input" name="agencies" id="agencies" t-att-value="resp_agencies">
+                                    <t t-foreach="dict_agencies" t-as="ite_agencies">
+                                        <option t-att-value="ite_agencies.id" t-att-selected="ite_agencies.id == (0 if not website_sale_order.agencia_envio else website_sale_order.agencia_envio.id)" t-att-data-code="ite_agencies.code">
+                                            <t t-esc="ite_agencies.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                            <br/>
+                            <h6 class="d-inline mr-2">Tipo de envío:</h6>
+                            <input type="radio" name="tipo_envio_agencia" id="direccion" value="direccion" t-att-checked="'checked' if not website_sale_order.tipo_envio_agencia else ('checked' if website_sale_order.tipo_envio_agencia == 'direccion' else False)"/>
+                            <label for="direccion">Envío a dirección del cliente</label>
+                            <input type="radio" name="tipo_envio_agencia" id="agencia" value="agencia" t-att-checked="'checked' if website_sale_order.tipo_envio_agencia == 'agencia' else False"/>
+                            <label for="agencia">Retira en Agencia</label>
+                            <br/>
+                            <h6 id="h6_nombre_courier_cliente" t-attf-class="#{'d-none' if not website_sale_order.agencia_envio or (website_sale_order.agencia_envio and website_sale_order.agencia_envio.code != '00') else 'd-inline'} mr-2">
+                                Nombre de Agencia:
+                                <input type="text" class="form-control o_website_form_input" id="nombre_courier_cliente" name="nombre_courier_cliente" t-att-value="'' if  not website_sale_order.nombre_courier_cliente else website_sale_order.nombre_courier_cliente"/>
+                            </h6>
+                            <h6 id="h6_direccion_courier_cliente" t-attf-class="#{'d-none' if not website_sale_order.tipo_envio_agencia or (website_sale_order.tipo_envio_agencia and website_sale_order.tipo_envio_agencia == 'direccion') else 'd-inline'} mr-2">
+                                Direccion de Agencia de Retiro:
+                                <input type="text" class="form-control o_website_form_input" id="direccion_courier_cliente" name="direccion_courier_cliente" t-att-value="'' if  not website_sale_order.direccion_courier_cliente else website_sale_order.direccion_courier_cliente"/>
+                            </h6>
+                        </t>
+                        <h6 class="d-inline mr-2">
+                            Número de identificación:
+                            <input type="text" class="form-control o_website_form_input" id="numero_documento_cliente" name="numero_documento_cliente" t-att-value="'' if  not website_sale_order.numero_documento_cliente else website_sale_order.numero_documento_cliente"/>
+                        </h6>
+                        <h6 class="d-inline mr-2">
+                            Nombres y Apellidos:
+                            <input type="text" class="form-control o_website_form_input" id="nombre_contacto_cliente" name="nombre_contacto_cliente" t-att-value="'' if  not website_sale_order.nombre_contacto_cliente else website_sale_order.nombre_contacto_cliente"/>
+                        </h6>
+                    </div>
+                </t>
+            </div>
+        </xpath>
+    </template>
+    <!-- MOFICACION DE JAVASCRIPT PARA EVENTOS DE SELECCION DE DIRECCION -->
+    <template id="assets_frontend_retira_cliente" inherit_id="website.assets_frontend">
+        <xpath expr="script[last()]" position="after">
+            <script type="text/javascript" src="/b2b_address/static/src/js/website_sale_delivery.js"></script>
+            <script type="text/javascript" src="/b2b_address/static/src/js/website_sale_payment.js"></script>
+        </xpath>
+    </template>
+</odoo>

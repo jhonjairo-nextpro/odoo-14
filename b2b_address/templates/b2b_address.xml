@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo> 
+
+
+    <!-- DIRECCIONES DE FACTURACION -->
+    <template id="b2b_address_checkout" inherit_id="website_sale.checkout">
+    <xpath expr="./t[1]" position="replace">
+        <t t-name="website_sale.checkout">
+            <t t-call="website.layout">
+                <t t-set="additional_title">Tienda - Compra</t>
+                <!--<t t-set="no_footer">1</t>-->
+                <div id="wrap">
+                    <div class="container oe_website_sale py-2">
+                        <t t-set="same_shipping" t-value="bool(order.partner_shipping_id==order.partner_id or only_services)"/>
+                        <div class="row">
+                            <div class="col-12">
+                                <t t-call="website_sale.wizard_checkout">
+                                    <t t-set="step" t-value="20"/>
+                                </t>
+                            </div>
+                            <div class="col-12 col-xl-auto order-xl-2 d-none d-xl-block">
+                                <t t-call="website_sale.cart_summary"/>
+                            </div>
+                            <div class="col-12 col-xl order-xl-1 oe_cart">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                    <h3 class="o_page_header mt8">Datos de facturación</h3>
+                                    </div>
+                                </div>
+                                <a t-if="request.website.is_site_b2b"  target="_BLANK" href="/solictud-cambio-direccion">Si desea modificar su dirección de factruración por favor complete el siguiente formulario (Dar click aqui)
+                                </a>
+                                <div class="row all_invoicing">
+                                    <div class="col-lg-12">
+                                        <div class="row mt8">
+                                            <t t-foreach="invoices" t-as="inv">
+                                                <div class="col-md-12 col-lg-6 one_kanban">
+                                                    <t t-call="website_sale.address_kanban">
+                                                        <t t-set="actual_partner" t-value="order.partner_id"/>
+                                                        <t t-set="contact" t-value="inv"/>
+                                                        <t t-set="selected" t-value="order.partner_invoice_id==inv"/>
+                                                        <t t-set="readonly" t-value="1"/>                                                    </t>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <t t-if="not only_services" groups="sale.group_delivery_invoice_address">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <h3 class="o_page_header mt16 mb4">Dirección de entrega</h3>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row all_shipping">
+                                        <div class="col-lg-12">
+                                            <div class="row mt8">
+                                                <div class="col-md-12 col-lg-12 one_kanban">
+                                                    <!--SI PERMITE AGREGAR DIRECCION DE ENTREGA
+                                                    <form t-if="request.website._get_is_b2b_address_restrictions()==False" action="/shop/address" method="post" class=''>
+                                                    --> 
+                                                    <form action="/shop/address" method="post" class=''>
+                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+                                                        <a role="button" href="#" class='a-submit btn btn-secondary mb16 btn-block'>
+                                                            <i class="fa fa-plus-square"/>
+                                                            <span>Agregar dirección de entrega</span>
+                                                        </a>
+                                                    </form>
+                                                </div>
+                                                <t t-foreach="shippings" t-as="ship">
+                                                    <div class="col-md-12 col-lg-6 one_kanban">
+                                                        <t t-call="website_sale.address_kanban">
+                                                            <t t-set="actual_partner" t-value="order.partner_id"/>
+                                                            <t t-set="contact" t-value="ship"/>
+                                                            <t t-set="selected" t-value="order.partner_shipping_id==ship"/>
+                                                            <t t-set="readonly" t-value="bool(len(shippings)==1) or request.website._get_is_b2b_address_restrictions()==True"/>
+                                                            <t t-set="edit_billing" t-value="bool(ship==order.partner_id)"/>
+                                                        </t>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </t>
+                                <div class="d-flex justify-content-between mt-3">
+                                    <a role="button" href="/shop/cart" class="btn btn-secondary mb32">
+                                        <i class="fa fa-chevron-left"/>
+                                        <span>Volver al carrito</span>
+                                    </a>
+                                    <a role="button" href="/shop/confirm_order" class="btn btn-primary mb32">
+                                        <span>Confirmar</span>
+                                        <i class="fa fa-chevron-right"/>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </xpath>    
+    </template>  
+
+
+    <!-- CONFIRMACION DE DIRECCION DE ENTREGA Y FACTURA CHECKOUT -->
+    <template id="b2b_address_payment_confirm" inherit_id="website_sale.payment">
+         <xpath expr="//div[@class='card'][1]" position="replace">
+            <div class="card" id="card_shipping_and_billing">
+                <div t-if="not request.website.is_site_b2b"><h3>1. Confirme dirección y método de entrega</h3></div>
+                <div t-if="request.website.is_site_b2b"><h3>2. Confirme dirección y método de entrega</h3></div>
+                <div class="card-body" id="shipping_and_billing">
+                    <a class="float-right no-decoration" href="/shop/checkout"><i class="fa fa-edit"/> Seleccione otra dirección de factura o entrega</a>
+                    <t t-set="same_shipping" t-value="bool(order.partner_shipping_id==order.partner_id or only_services)"/>
+                    <div id="div_billing"><b>Dirección de Factura<t t-if="same_shipping and not only_services"> &amp; Entrega para Delivery</t>: </b><span t-esc="order.partner_invoice_id.address_format_custom"  class="address-inline"/></div>
+                    <div id="div_shipping" style="border-bottom:none !important;padding-bottom:10px !important;" t-if="not same_shipping and not only_services" groups="sale.group_delivery_invoice_address"><b>Dirección de Entrega para Delivery: </b><span t-esc="order.partner_shipping_id.address_format_custom" class="address-inline"/></div>
+                    <div t-if="request.website.is_site_b2b" id="div_shipping"><span style="font-size:10px;color:red;">Nota: La dirección de entrega Final corresponde a la dirección o domicilio donde se le hará entrega del producto; por favor no indicar en esta dirección la dirección de la agencia de transporte.</span></div>
+                </div>
+            </div>
+        </xpath>
+
+        <xpath expr="//h3[@class='mb24'][1]" position="replace">
+            <h3 t-if="not request.website.is_site_b2b" class="mb24">2. Confirme método de pago </h3>
+            <h3 t-if="request.website.is_site_b2b" class="mb24">3. Confirme método de pago </h3>
+        </xpath>
+    </template>  
+
+    <template id="custom_website_sale_confirmation" inherit_id="website_sale.confirmation">
+        <xpath expr="//h1[1]" position="after">  
+            <h4 t-if="order.carrier_id.retiro_en_tienda and request.website.is_site_b2b">
+                <span>Estimado cliente, su pedido <strong><t t-esc="order.name"/></strong><![CDATA[ estará siendo procesado en las próximas 48 horas y se le estará notificando para que pueda pasar a recogerlo, por otro lado preocupados en su bienestar frente a la coyuntura actual del COVID-19 le pedimos comunicarse previamente con nuestra área de atención de pedidos al WhatsApp  (+51) 965 677303, para coordinar la hora de su visita en el horario de lunes a viernes desde las 8:30 am hasta 6:00 pm.]]></span>
+            </h4>
+            <h4 t-if="order.carrier_id.retiro_en_tienda and not request.website.is_site_b2b">
+                <span>Estimado cliente, su pedido <strong><t t-esc="order.name"/></strong><![CDATA[ estará siendo procesado en las próximas 24 horas y se le estará notificando para que pueda pasar a recogerlo, por otro lado preocupados en su bienestar frente a la coyuntura actual del COVID-19 le pedimos comunicarse previamente con nuestra área de atención de pedidos al WhatsApp  (+51) 965 677303, para coordinar la hora de su visita en el horario de lunes a viernes desde las 8:30 am hasta 6:00 pm.]]></span>
+            </h4>
+        </xpath>
+         <xpath expr="//div[@class='card mt-3'][1]" position="replace">  
+            <div class="card mt-3">
+                <div class="card-body">
+                    <t t-set="same_shipping" t-value="bool(order.partner_shipping_id==order.partner_id or only_services)"/>
+                    <t t-if="not order.carrier_id.retiro_en_tienda">
+                        <div><b>Dirección de Factura<t t-if="same_shipping and not only_services"> &amp; Entrega para Delivery</t>: </b><span t-esc="order.partner_invoice_id.address_format_custom"  class="address-inline"/></div>
+                        <div t-if="not same_shipping and not only_services" groups="sale.group_delivery_invoice_address"><b>Dirección de Entrega para Delivery: </b><span t-esc="order.partner_shipping_id.address_format_custom" class="address-inline"/></div>
+                         <br/>
+                        <span t-if="request.website.is_site_b2b"  style="font-size:10px;color:red">Nota: La dirección de entrega Final corresponde a la dirección o domicilio donde se le hará entrega del producto; por favor no indicar en esta dirección la dirección de la agencia de transporte.</span>
+                    </t>
+                    <t t-if="order.carrier_id.retiro_en_tienda">
+                        <div><b>Dirección de Factura: </b><span t-esc="order.partner_invoice_id.address_format_custom"  class="address-inline"/></div>
+                        <div><b>Dirección de Recojo: </b><span t-esc="order.carrier_id.direccion_retiro_tienda" class="address-inline"/></div>
+                    </t>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- DIRECCIONES DE FACTURACION - KANBAN -->
+    <template id="b2b_address_kanban" inherit_id="website_sale.address_kanban">
+        <xpath expr="./div[1]" position="replace">
+            <div t-attf-class="card #{selected and 'border border-primary' or ('js_change_shipping' if contact.type=='delivery' else 'js_change_invoicing')}">
+                <div class="card-body" style="min-height: 130px;">
+                    
+                    <t t-if="not request.website.is_site_b2b and inv" >
+                        <a href="#" class="btn btn-link float-right p-0 js_edit_address no-decoration" role="button" title="Edit this address" aria-label="Edit this address">
+                        <i class="fa fa-edit"/>Editar</a>
+                    </t>
+                    <!--SI PERMITE EDITAR DIRECCION DE ENTREGA
+                    <t t-if="request.website._get_is_b2b_address_restrictions() == False and ship" >
+                    --> 
+                    <t t-if="ship" >
+                        <a t-if="not actual_partner or (ship.id in actual_partner.child_ids.ids) or (ship.id in actual_partner.parent_id.child_ids.ids)" href="#" class="btn btn-link float-right p-0 js_edit_address no-decoration" role="button" title="Edit this address" aria-label="Edit this address">
+                            <i class="fa fa-edit"/>Editar
+                        </a>
+                    </t>
+                    <span t-esc="contact.name"/><br/>
+                    <span t-esc="contact.address_format_custom"/>
+                </div>
+                <div class="card-footer" t-if="not readonly">
+                    <span class="btn-ship" t-att-style="'' if selected else 'display:none;'">
+                        <a role="button" href="#" class="btn btn-block btn-primary">
+                            <t t-if="ship" >
+                                <i class="fa fa-check"/>  <span t-esc="'Enviar a esta dirección'"/> 
+                            </t>
+                            <t t-if="inv" >
+                                <i class="fa fa-check"/>  <span t-esc="'Facturar a esta dirección'"/> 
+                            </t>
+                        </a>
+                    </span>
+                    <span class="btn-ship" t-att-style="'' if not selected else 'display:none;'">
+                        <a role="button" href="#" class="btn btn-block btn-secondary">
+                            Seleccionar esta direeción
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </xpath>    
+        <!--<xpath expr="//a[@class='btn btn-link float-right p-0 js_edit_address no-decoration'][1]" position="replace">
+        </xpath> -->
+    </template>  
+
+    <!-- MOFICACION DE JAVASCRIPT PARA EVENTOS DE SELECCION DE DIRECCION -->
+    <template id="assets_frontend" inherit_id="website.assets_frontend">
+        <xpath expr="script[last()]" position="after">
+            <script type="text/javascript" src="/b2b_address/static/src/js/b2b_address.js"></script>
+            <script type="text/javascript" src="/b2b_address/static/src/js/b2b_address_edit.js"></script>
+        </xpath>
+    </template>
+
+</odoo>

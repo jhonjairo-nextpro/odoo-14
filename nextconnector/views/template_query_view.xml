@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    <!-- Plantillas de configuración de consultas -->	
+	    <record id="view_nextconnector_template_query_tree" model="ir.ui.view">
+            <field name="name">Plantillas de configuración de consultas</field>
+            <field name="model">nextconnector.template_query</field>
+            <field name="arch" type="xml">
+                <tree string="Plantillas de configuración de consultas">
+                    <field name="code"/>
+                    <field name="description"/>
+                    <field name="model"/>
+                    <field name="state"/>
+                    <field name="company_id"/>
+                </tree>
+            </field>
+	    </record>        
+	    <record id="view_nextconnector_template_query_form" model="ir.ui.view">
+            <field name="name">Plantillas de configuración de consultas</field>
+            <field name="model">nextconnector.template_query</field>            
+            <field name="arch" type="xml">
+                <form string="Plantillas de configuración de consultas">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="description"/>
+                        <field name="model"/>
+                        <field name="state"/>
+                        <field name="company_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Python Code" name='template_content' autofocus="autofocus">
+                            <field name="template_content" widget="ace" options="{'mode': 'python'}" />
+                        </page>
+                    </notebook>
+                </sheet>                
+                </form>	
+            </field>
+	    </record>        
+
+	    <record model="ir.actions.act_window" id="nextconnector.template_query_action">
+		    <field name="name">Plantillas de configuración de consultas</field>
+		    <field name="res_model">nextconnector.template_query</field>
+		    <field name="view_mode">tree,form</field>
+	    </record>
+
+        <!-- Menu -->
+        <!--SUBMENU CONFIGURACION -->
+        <record id="nextconnector.menu_settings" model="ir.ui.menu">
+            <field name="name">Configuración</field>
+            <field name="parent_id" ref="nextconnector.menu_app"/>
+            <!--<field name="action" ref="nextconnector.action_view_sales_rep"/>-->
+        </record>
+
+        <!--SUBSUBMENU: PLANTILLAS DE CONFIGURACION -->
+        <record id="nextconnector.menu_settings_template_query" model="ir.ui.menu">
+            <field name="name">Plantillas de configuración de consultas</field>
+            <field name="action" ref="nextconnector.template_query_action"/>
+            <field name="parent_id" ref="nextconnector.menu_settings"/>
+        </record>
+      
+    </data>
+</openerp>

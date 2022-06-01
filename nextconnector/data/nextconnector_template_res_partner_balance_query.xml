@@ -1,0 +1,77 @@
+
+<odoo>
+<data noupdate="1">
+
+   <!--  SALDO DE CLIENTE -->
+    <record id="nextconnector_template_query_get_data_customer_balance" model="nextconnector.template_query">
+        <field name="code">data_customer_balance</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Datos de Balance de Cliente</field>
+        <field name="model" ref="base.model_res_partner"/>
+        <field name="template_content"><![CDATA[
+query = """ 
+
+SELECT	T1."nxt_id_erp"
+		, CAST(SUM(T1."nxt_due_balance") AS NVARCHAR(20)) AS "nxt_due_balance"
+		, CAST(SUM(T1."nxt_balance") AS NVARCHAR(20)) AS "nxt_balance"
+	 FROM 
+		(SELECT	P1."ShortName" as "nxt_id_erp"
+				, SUM(P1."BalDueDeb") - SUM(P1."BalDueCred") AS "nxt_due_balance"
+				, 0 AS "nxt_balance"
+			FROM	OJDT P0 
+					INNER JOIN JDT1 P1 ON P0."TransId" = P1. "TransId"
+		WHERE 	P1."ShortName" = '{id}' 
+				AND (P1."BalDueDeb" - P1."BalDueCred") != 0 
+				AND P1."DueDate" < GETDATE()
+		GROUP BY P1."ShortName"
+		
+		UNION ALL 
+		
+		SELECT	T0."CardCode" AS "nxt_id_erp"
+				, 0 AS "nxt_due_balance"
+				, T0."Balance" + T0."OrdersBal" AS "nxt_balance" 
+			FROM	OCRD T0 
+		WHERE	T0."CardCode" = '{id}') AS T1
+GROUP BY T1."nxt_id_erp"
+""".format(id=record["nxt_id_erp"])
+
+json_data = {
+    "id": "",
+    "record_type": "item",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+} 
+        ]]></field>
+    </record>
+
+   <!-- NORMALIZA SALDO DE CLIENTE -->
+    <record id="nextconnector_template_query_normalize_data_customer_balance" model="nextconnector.template_query">
+        <field name="code">normalize_data_customer_balance</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Normaliza Datos de Balance de Cliente</field>
+        <field name="model" ref="base.model_res_partner"/>
+        <field name="template_content"><![CDATA[
+
+json_data = {}
+rec = env['res.partner'].search([('nxt_id_erp','=',record["nxt_id_erp"])])
+  
+if rec :
+    result = rec.write(record)
+    post_type = "write"
+    _logger.error("Update customer balance !  id:" + str(result) + " - " + str(record))
+else:
+    _logger.error("No Update customer balance !  id:" + str(result) + " - " + str(record))
+
+json_data = {
+    "condition" : post_type,
+    "record" : record
+}
+        ]]></field>
+    </record>
+
+
+ 
+
+</data>
+</odoo>

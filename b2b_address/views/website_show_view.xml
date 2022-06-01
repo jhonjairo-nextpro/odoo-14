@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <record id="view_website_form_inherit_hide_price_shop" model="ir.ui.view">
+            <field name="name">website.hide.price</field>
+            <field name="model">website</field>
+            <field name="inherit_id" ref="website.view_website_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='other']" position="inside">
+                    <field name="is_b2b_address_restrictions"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

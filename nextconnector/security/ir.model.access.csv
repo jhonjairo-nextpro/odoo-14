@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_nextconnector_sales_rep,nextconnector.sales.rep,model_nextconnector_sales_rep,base.group_system,1,1,1,1
+access_nextconnector_template_data,nextconnector.template.data,model_nextconnector_template_data,base.group_system,1,1,1,1
+access_nextconnector_template_query,nextconnector.template.query,model_nextconnector_template_query,base.group_system,1,1,1,1
+access_nextconnector_process,nextconnector.process,model_nextconnector_process,base.group_system,1,1,1,1
+access_nextconnector_popup_message,nextconnector.popup.message,model_nextconnector_popup_message,base.group_system,1,1,1,1
+access_nextconnector_process_queue,nextconnector.process.queue,model_nextconnector_process_queue,base.group_system,1,1,1,1

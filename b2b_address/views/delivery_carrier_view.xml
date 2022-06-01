@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_delivery_carrier_form" model="ir.ui.view">
+        <field name="name">view.delivery.carrier.form</field>
+        <field name="model">delivery.carrier</field>
+        <field name="type">form</field>
+        <field name="inherit_id" ref="delivery.view_delivery_carrier_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='company_id']" position="before">
+                
+                <field name="retiro_en_tienda" />
+                <field name="envio_por_courier" />
+                <field name="etiqueta_retiro_tienda" />
+                <field name="direccion_retiro_tienda" />
+
+                <field name="state_id" />
+                <field name="city_id" />
+                <field name="district_id" />
+
+            </xpath>
+            <xpath expr="//field[@name='website_id']" position="after">
+                <field name="warehouse_id" />
+                <field name="warehouse_allowed_ids" widget="many2many_tags"/>
+                <field name="precio_base_kg" />
+                <field name="precio_kg_adicional" />
+                <field name="precio_base_kg_valorado" />
+                <field name="precio_kg_adicional_valorado" />
+                <field name="precio_envio_por_agencia" />
+                <field name="amount_free_ship_envio_por_agencia" />
+            </xpath>
+
+            <xpath expr="//page[@name='pricing']" position="replace"/>
+
+            <xpath expr="//field[@name='state_ids']" position="after">
+                <field name="city_ids" widget="many2many_tags"/>
+                <field name="district_ids" widget="many2many_tags"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

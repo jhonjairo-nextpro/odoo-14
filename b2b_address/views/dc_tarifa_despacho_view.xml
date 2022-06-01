@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    <!-- Tarifa - Despacho -->	
+	    <record id="view_dc_tarifa_despacho_tree" model="ir.ui.view">
+            <field name="name">Tarifa - Despacho</field>
+            <field name="model">dc.tarifa.despacho</field>
+            <field name="arch" type="xml">
+                <tree string="Tarifa - Despacho">
+                    <field name="state_id"/>
+                    <field name="city_id"/>
+                    <field name="district_id"/>
+
+                    <field name="warehouse_id" widget="many2many_tags"/>
+                    <field name="precio_base_kg"/>
+                    <field name="precio_kg_adicional"/>
+                    <field name="precio_base_kg_valorado"/>
+                    <field name="precio_kg_adicional_valorado"/>
+                    <field name="ambito"/>
+                    <field name="ubigeo"/>
+                    <field name="free_ship_amount_order"/>
+                    <field name="lead_time"/>
+                </tree>
+            </field>
+	    </record>        
+	    <record id="view_dc_tarifa_despacho_form" model="ir.ui.view">
+            <field name="name">Tarifa - Despacho</field>
+            <field name="model">dc.tarifa.despacho</field>            
+            <field name="arch" type="xml">
+                <form string="Tarifa - Despacho">
+                <sheet>
+                    <group>
+                        <field name="state_id"/>
+                        <field name="city_id"/>
+                        <field name="district_id"/>
+                        <field name="warehouse_id" widget="many2many_tags"/>
+                        <field name="precio_base_kg"/>
+                        <field name="precio_kg_adicional"/>
+                        <field name="precio_base_kg_valorado"/>
+                        <field name="precio_kg_adicional_valorado"/>
+                        <field name="ambito"/>
+                        <field name="ubigeo"/>
+                        <field name="free_ship_amount_order"/>
+                        <field name="lead_time"/>
+                    </group>
+                </sheet>                
+                </form>	
+            </field>
+	    </record>        
+
+	    <record model="ir.actions.act_window" id="dc_tarifa_despacho_action">
+		    <field name="name">Tarifa - Despacho</field>
+		    <field name="res_model">dc.tarifa.despacho</field>
+		    <field name="view_mode">tree,form</field>
+	    </record>
+
+        <!--SUBSUBMENU: PLANTILLAS DE CONFIGURACION -->
+        <record id="menu_settings_dc_tarifa_despacho" model="ir.ui.menu">
+            <field name="name">Tarifas de despacho</field>
+            <field name="action" ref="dc_tarifa_despacho_action"/>
+            <field name="parent_id" ref="website.menu_website_global_configuration"/>
+        </record>
+    </data>
+</openerp>

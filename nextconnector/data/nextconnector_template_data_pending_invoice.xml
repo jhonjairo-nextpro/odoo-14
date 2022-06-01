@@ -1,0 +1,108 @@
+
+<odoo>
+<data noupdate="1">
+
+  <!-- OBTENCION DE FACTURAS PENDIENTES DE PAGO -->
+    <record id="nextconnector_template_data_get_pending_invoice" model="nextconnector.template_data">
+        <field name="code">get_pending_invoices</field>
+        <field name="description">NextConnector - Obtención de documentos facturas pendientes</field>
+        <field name="model" ref="account.model_account_move"/>
+        <field name="template_content"><![CDATA[
+        
+#========= OBTENCION DE FACTURAS PENDIENTES DE PAGO ===========
+from datetime import datetime
+json_data = {}
+data_query = env['nextconnector.process'].sudo().get_data_query(
+"""
+SELECT TOP 2 P1."ShortName" as "partner_id"
+		, CAST(SUM(P1."BalDueDeb"  - P1."BalDueCred") AS NVARCHAR(20)) AS "pending_amount"
+		, TO_CHAR(P3."DocDate", 'DD-MM-YYYY') AS "doc_date"
+		, TO_CHAR(P1."DueDate", 'DD-MM-YYYY') AS "due_date"
+		, TO_CHAR(P3."NumAtCard") AS "num_at_card"
+		, TO_CHAR(P3."DocEntry") AS "doc_entry"
+		, TO_CHAR(P3."DocNum") AS "doc_num"
+		--, P0."TransType" AS "trans_type"
+		--, P1."TransId" || '-' || P1."Line_ID" AS "tran_id"
+	FROM	OJDT P0 
+			INNER JOIN JDT1 P1 ON P0."TransId" = P1."TransId"
+			INNER JOIN OCRD P2 ON P2."CardCode" = P1."ShortName"
+			INNER JOIN OINV P3 ON P3."TransId" = P0."TransId"
+WHERE 	(P1."BalDueDeb" - P1."BalDueCred") != 0 
+		AND P2."CardType" = 'C'
+		AND P0."TransType" = '13'
+		--AND P1."DueDate" < GETDATE()
+GROUP BY	P3."NumAtCard"
+			, P1."ShortName"
+			, P3."DocDate"
+			, P1."DueDate"
+			, P3."NumAtCard"
+			, P3."DocEntry"
+			, P3."DocNum"
+ORDER BY P3."DocEntry" DESC
+
+""".format()
+)
+
+if not data_query:
+  _logger.info("No existen facturas pentienes: >> data_query:" + str(data_query))
+else:
+  _logger.info("Existen facturas pendientes: >> data_query :" + str(data_query))
+
+for data in data_query:
+  customer = env["res.partner"].search([("nxt_id_erp","=", data["partner_id"]), ("parent_id","=", False)])
+  if not customer:
+    continue #SALTA EL CICLO SI CLIENTE NO EXISTE
+  invoice = env["account.move"].search([
+    ("partner_id","=", customer.id)
+    , ("type","=", "out_invoice")
+    , ("state","=", "posted")
+    , ("nxt_id_erp","=", data["doc_entry"])
+  ])
+  if invoice:
+    continue #SALTA EL CICLO SI FACTURA YA EXISTE
+  
+  doc_date = datetime.strptime(data["doc_date"], '%d-%m-%Y')
+  due_date = datetime.strptime(data["due_date"], '%d-%m-%Y')
+  
+  #INSTANCIA DE LINEA
+  move_line_vals = []
+  line = (0, 0, {
+    #'display_type': 'line_note'
+    'product_id': 1082
+    , 'quantity':1
+    , 'sequence': 10
+    , 'name': "IMPORTE"
+    , 'discount': 0
+    , 'price_unit': float(data["pending_amount"])
+    , 'product_uom_id': 1
+    , 'tax_ids': None
+  })
+  move_line_vals.append(line)
+  
+  #CREACIÓN DE LA FACTURA
+  move_vals = {
+      'date': doc_date,
+      'ref' : data["doc_num"],
+      'nxt_id_erp' : data["doc_entry"],
+      'name' : data["num_at_card"],
+      'partner_id' : customer,
+      'invoice_date' : doc_date,
+      'invoice_date_due' : due_date,
+      "company_id": 1,
+      "invoice_line_ids": move_line_vals,
+      'type' : "out_invoice"
+  }
+  move = env['account.move'].create(move_vals)
+  move.action_post()
+  _logger.info("Factura creada: >> id :" + str(move))
+  
+json_data["result"] = True
+
+        ]]></field>
+    </record>
+
+
+ 
+
+</data>
+</odoo>

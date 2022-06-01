@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dc_tarifa_despacho,dc.tarifa.despacho,model_dc_tarifa_despacho,base.group_user,1,0,0,0
+access_dc_tarifa_despacho_group_public,dc.tarifa.despacho.group.public,model_dc_tarifa_despacho,base.group_public,1,0,0,0
+access_dc_tarifa_despacho_manager,dc.tarifa.despacho.manager,model_dc_tarifa_despacho,base.group_erp_manager,1,1,1,1
+access_dc_tarifa_despacho_account_manager,dc.tarifa.despacho.manager,model_dc_tarifa_despacho,account.group_account_manager,1,1,1,1
+access_dc_tarifa_despacho_group_portal,dc.tarifa.despacho.group.portal,model_dc_tarifa_despacho,base.group_portal,1,0,0,0
+access_shipping_agencies_group_portal,shipping_agencies,model_shipping_agencies,base.group_user,1,1,1,1 
+

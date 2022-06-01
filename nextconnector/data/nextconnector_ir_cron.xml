@@ -1,0 +1,204 @@
+
+<odoo>
+<data noupdate="1">    
+    <!-- ACCIONES PLANIFICADA - COLA DE PROCESAMENTO-->
+    <record id="ir_cron_process_queue" model="ir.cron">
+            <field name="name">NextConnector - Cola de sincronización de registros</field>
+            <field name="model_id" ref="model_nextconnector_process_queue"/>
+            <field name="state">code</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field name="code"><![CDATA[
+record_queues = env["nextconnector.process_queue"].search([('nxt_sync','!=',"S")], limit=20)
+for queue in record_queues:
+  try:
+  #if True:
+    log("Intento de sincronizacion:" + str(queue), level='intent_sync_queue')
+    #=================================================================================
+    # INICIO SINCRONIZACION DE CLIENTES
+    #=================================================================================
+    record = env[queue.model].search([('id','=',queue.record_id)], limit=20)
+    if queue.nxt_sync != 'S' and record:
+      url_request = "/nextconnector/api/records/customer"
+      queue.sudo().write({"url_request":url_request, "last_sync": datetime.datetime.now(), "count_sync": queue.count_sync +1 })
+      result = env["nextconnector.process"].sudo().generic_request(record, url_request, "post", "data", "set_customer", queue.id)
+      if result:
+        if result.get("code") == "0": #SI LA SINCRONIZACION ES CORRECTA
+          if record.nxt_sync != 'S' or  record.nxt_id_erp != result.get("id_erp"):
+            record.sudo().write({"nxt_sync":"S", "nxt_id_erp":result.get("id_erp")})
+          queue.sudo().write({"nxt_sync":"S", "message_sync":result.get("message"), "nxt_id_erp":result.get("id_erp"), "json_response":result})
+        else:#SI LA SINCRONIZACION TIENE ALGUN ERROR
+          queue.sudo().write({"nxt_sync":"E", "message_sync":result.get("message"), "json_response":result})
+    #=================================================================================
+    # FIN SINCRONIZACION DE CLIENTES
+    #=================================================================================
+  #try: 
+  except Exception as e:
+    queue.sudo().write({"nxt_sync":"E", "last_sync": datetime.datetime.now(), "count_sync": queue.count_sync +1, "message_sync":"Exception en cola de sincronizacion:" + str(e)})
+    log("Exception en cola de sincronizacion:" + str(e) , level='error_sync_queue')
+    
+            ]]></field>
+        </record>
+
+    <!-- ACCIONES PLANIFICADA - SINCRONIZACION DE PEDIDOS DE VENTA-->
+    <record id="ir_cron_sale_order_sync" model="ir.cron">
+            <field name="name">NextConnector - Sincroniza Pedidos de Venta</field>
+            <field name="model_id" ref="model_sale_order"/>
+            <field name="state">code</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field eval="False" name="doall"/>
+            <field name="code"><![CDATA[
+fecha_actual = datetime.datetime.now() + datetime.timedelta(days=-7)
+orders = env["sale.order"].sudo().search(
+  [
+    "&"
+    ,["state","in",["sale"]]
+    ,["nxt_sync","!=","S"]
+    ,["date_order",">",str(fecha_actual)]
+    #,["name","=","S01008"] 
+  ], limit = 10
+  )
+i = 0
+for order in orders:
+    try:
+        data = env['nextconnector.process'].sudo().get_data_query(
+        """ SELECT T0."DocEntry" FROM ORDR T0 WHERE T0."NumAtCard" = '{id}'  """.format(id=order.name) )
+	
+        if data:
+            log("Registro existente en el ERP:" + data[0].get("DocEntry")  + " >> i :" + str(i) + " >> order :" + str(order.name) + " >> data :" + str(data) , level='exist_sale_order')
+            order.write({"nxt_sync":"S","nxt_id_erp":data[0].get("DocEntry")})
+        else:
+            #=================================================================================
+            # SINCRONIZACION DE ORDEN DE VENTA
+            #=================================================================================
+            order.synchronize_record()
+            log("Registro no existente en el ERP:" + " >> i :" + str(i) + " >> order :" + str(order.name) + " >> data :" + str(data) , level='create_sale_order')
+        env.cr.commit()
+    except Exception as e:
+        log("Error :" + str(e)  + " >> i :" + str(i) + " >> order :" + str(order.name), level='error_sale_order')
+        continue 
+    i +=1
+            ]]></field>
+      </record>
+
+
+    <!-- ACCIONES PLANIFICADA - SINCRONIZACION DE PAGOS -->
+    <record id="ir_cron_payment_customer_sync" model="ir.cron">
+            <field name="name">NextConnector - Sincroniza Pagos de Clientes</field>
+            <field name="model_id" ref="model_account_move"/>
+            <field name="state">code</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field eval="False" name="doall"/>
+            <field name="code"><![CDATA[
+fecha_actual = datetime.datetime.now() + datetime.timedelta(days=-7)
+payments = env["account.payment"].sudo().search(
+  [
+    "&"
+    ,["state","=","posted"]
+    , ["payment_type","=","inbound"] 
+    ,["nxt_sync","!=","S"]
+    ,["payment_date",">",str(fecha_actual)]
+  ], limit = 10
+  )
+i = 0
+
+num_order = ""
+pay_ref = "" 
+
+
+
+for payment in payments:
+
+  if payment.payment_transaction_id:
+    num_order = payment.payment_transaction_id.sale_order_ids[0].name
+  else:
+    num_order = payment.invoice_ids[0].invoice_origin  
+  
+  try:
+    data = env['nextconnector.process'].sudo().get_data_query(
+      """ SELECT T0."DocEntry" FROM ORCT T0
+      WHERE T0."JrnlMemo" = '{id}'  """.format(id=num_order)
+    )
+    if data:
+      log("Registro existente en el ERP:" + data[0].get("DocEntry")  + " >> i :" + str(i) + " >> payment :" + str(payment.name) + " >> data :" + str(data) , level='exist_payment_customer')
+      payment.write({"nxt_sync":"S","nxt_id_erp":data[0].get("DocEntry")})
+    else:
+      payment.synchronize_record()
+      log("Registro no existente en el ERP:" + " >> i :" + str(i) + " >> payment :" + str(payment.name) + " >> data :" + str(data) , level='create_payment_customer')
+  except Exception as e:
+    log("Error :" + str(e)  + " >> i :" + str(i) + " >> payment :" + str(payment.name), level='error_payment_customer')
+    continue 
+  i +=1
+            ]]></field>
+      </record>
+
+    <!-- ACCIONES PLANIFICADA - SINCRONIZACION DE FACTURAS PENDIENTES DE PAGO -->
+    <record id="ir_cron_get_pending_invoices" model="ir.cron">
+            <field name="name">NextConnector - Sincroniza Facturas Pendientes de Pago</field>
+            <field name="model_id" ref="model_sale_order"/>
+            <field name="state">code</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">24</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field eval="False" name="doall"/>
+            <field name="code"><![CDATA[
+try:
+    #=================================================================================
+    # OBTENCION DE FACTURAS PENDIENTES DE PAGO
+    #=================================================================================
+    log("INICIO CONSULTA DE FACTURA PENDIENTES" , level='ini_get_pending_invoices')
+    result = env["nextconnector.process"].sudo().exec_template_code(None, "get_pending_invoices")
+    log("FIN CONSULTA DE FACTURA PENDIENTES" , level='fin_get_pending_invoices')
+except  Exception as e:
+    log("FIN CONSULTA DE FACTURA PENDIENTES" + str(e) , level='error_get_pending_invoices')
+            ]]></field>
+      </record>
+
+    <!-- ACCIONES PLANIFICADA - SINCRONIZACION DE CLIENTE, ARTICULOS, LISTAS DE PRECIOS -->
+    <record id="ir_cron_get_items_prices_customers" model="ir.cron">
+            <field name="name">NextConnector - Consulta diaria de articulos, lista precios y clientes</field>
+            <field name="model_id" ref="model_nextconnector_process"/>
+            <field name="state">code</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">24</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field eval="False" name="doall"/>
+            <field name="code"><![CDATA[  
+try:
+    env['nextconnector.process'].sudo().import_items()
+    log("Sincroniza articulos", level='sincroniza_articulos')
+except Exception as e:
+    log("Sincroniza articulos Error :" + str(e), level='error_articulos')
+  
+try:
+    env['nextconnector.process'].sudo().import_product_pricelist()
+    log("Sincroniza lista de precios", level='sincroniza_pricelist')
+except Exception as e:
+    log("Sincroniza lista de precios Error :" + str(e), level='error_pricelist')
+
+try:
+    log("Sincroniza clientes", level='ini_sincroniza_clientes')
+    env['nextconnector.process'].sudo().import_customers()
+    log("Sincroniza clientes", level='fin_sincroniza_clientes')
+except Exception as e:
+    log("Sincroniza clientes Error :" + str(e), level='error_clientes')
+            ]]></field>
+      </record>
+
+</data>    
+</odoo>

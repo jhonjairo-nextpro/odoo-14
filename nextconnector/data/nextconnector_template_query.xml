@@ -1,0 +1,456 @@
+
+<odoo>
+<data noupdate="1">
+
+   <!-- LISTA DE ARTICULOS -->
+    <record id="nextconnector_template_query_get_list_product_template" model="nextconnector.template_query">
+        <field name="code">list_products</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Lista de Articulos</field>
+        <field name="model" ref="product.model_product_template"/>
+        <field name="template_content"><![CDATA[
+query = """
+SELECT T0."ItemCode" AS "nxt_id_erp"
+	FROM	OITM T0 	
+WHERE	T0."QryGroup11" = 'Y' 
+		OR T0."QryGroup12" = 'Y'
+ORDER BY T0."ItemCode"
+""".format()
+json_data = {
+    "id": "",
+    "record_type": "items",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+}
+        ]]></field>
+    </record>
+
+
+   <!--  DATOS DE ARTICULO -->
+    <record id="nextconnector_template_query_get_data_product_template" model="nextconnector.template_query">
+        <field name="code">data_product</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Datos de Articulo</field>
+        <field name="model" ref="product.model_product_template"/>
+        <field name="template_content"><![CDATA[
+query = """ 
+SELECT	T0."ItemCode" AS "nxt_id_erp"
+		, T0."ItemCode" AS "default_code"
+		, T0."ItemName" AS "name"
+		, T0."ItemName" AS "description_sale"
+		, 'product' AS "type"
+		,  T0."TaxCodeAR" AS "taxes_id"	
+	FROM	OITM T0 
+WHERE	T0."ItemCode" = '{id}'
+ORDER BY T0."ItemCode"
+""".format(id=record["nxt_id_erp"])
+
+json_data = {
+    "id": "",
+    "record_type": "item",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+}
+   
+        ]]></field>
+    </record>
+
+   <!--  POST UPDATE DATOS DE ARTICULO -->
+    <record id="nextconnector_template_query_normalize_product_template" model="nextconnector.template_query">
+        <field name="code">normalize_data_product</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Normaliza Datos de Articulo</field>
+        <field name="model" ref="product.model_product_template"/>
+        <field name="template_content"><![CDATA[
+taxes_id = env['account.tax'].search([('nxt_id_erp','=',record["taxes_id"])])
+record["taxes_id"] = [taxes_id.id]
+
+json_data = {}
+rec = env['product.product'].search([('nxt_id_erp','=',record["nxt_id_erp"])])
+if rec :
+    result = rec.write(record)
+    post_type = "write"
+    _logger.error("Update articulo !  item_id:" + str(result) + " - " + str(record))
+else:
+    result = env['product.product'].create(record)
+    post_type = "create"
+    _logger.error("Create articulo !  item_id:" + str(result) + " - " + str(record))
+
+json_data = {
+    "condition" : post_type,
+    "record" : record
+}
+        ]]></field>
+    </record>
+
+
+
+    <!-- LISTA DE CLIENTES -->
+    <record id="nextconnector_template_query_get_list_customers" model="nextconnector.template_query">
+        <field name="code">list_customers</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Lista de Clientes</field>
+        <field name="model" ref="base.model_res_partner"/>
+        <field name="template_content"><![CDATA[
+id_exist = "("
+customer = env["res.partner"].search([("nxt_id_erp","!=",False),("parent_id","=",False)])
+for cus in customer:
+  id_exist += "'" + str(cus.nxt_id_erp) + "',"
+
+id_exist += "'')" 
+query = """
+SELECT TOP 1000	
+	T0."CardCode" AS "nxt_id_erp"
+FROM	
+	OCRD T0 
+WHERE	
+	T0."CardType" = 'C' 
+	AND T0."frozenFor" = 'N'
+	--AND T0."QryGroup30" = 'Y'
+	AND T0."CardCode" NOT IN {id}
+ORDER BY T0."CardCode"
+""".format(id=id_exist)
+json_data = {
+    "id": "",
+    "record_type": "items",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+}
+        ]]></field>
+    </record>
+
+
+   <!--  DATOS DE CLIENTE -->
+    <record id="nextconnector_template_query_get_data_customer" model="nextconnector.template_query">
+        <field name="code">data_customer</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Datos de Cliente</field>
+        <field name="model" ref="base.model_res_partner"/>
+        <field name="template_content"><![CDATA[
+query = """ 
+SELECT	  'master' AS "recordtype"	
+		, T0."CardCode" AS "nxt_id_erp"
+		, T0."LicTradNum" AS "vat"
+		, T0."CardName" AS "name"
+		, 'other' AS "type"
+		, T0."CardName" AS "nombre_direccion"
+		, T0."Country" AS "country_id"
+		, T0."County" AS "county" --provincia
+		, T0."City" AS "city" --canton
+		, T0."Address" AS "street"
+		, T0."Phone1" AS "phone"
+		, T0."E_Mail" AS "email"
+	FROM	OCRD T0 
+WHERE	T0."CardType" = 'C' 
+		AND T0."QryGroup19" = 'Y'
+		AND T0."CardCode" = '{id}' 
+UNION ALL
+SELECT	  'address' AS "recordtype"	
+		, T0."CardCode" AS "nxt_id_erp"
+		, T0."LicTradNum" AS "vat"
+		, T1."Address" AS "name"
+		, CASE WHEN T1."AdresType" = 'B' THEN 'invoice' ELSE 'delivery' END  AS "type"
+		, T1."Address" AS "nombre_direccion"
+		, T1."Country" AS "country_id"
+		, T1."County" AS "county" --provincia
+		, T1."City" AS "city" --canton
+		, T1."Street" AS "street"
+		, T0."Phone1" AS "phone"
+		, T0."E_Mail" AS "email"
+	FROM	OCRD T0 INNER JOIN
+			CRD1 T1 ON T0."CardCode" = T1."CardCode"
+WHERE	T0."CardType" = 'C' 
+		AND T0."QryGroup19" = 'Y'
+		AND T0."CardCode" = '{id}' 
+""".format(id=record["nxt_id_erp"])
+
+json_data = {
+    "id": "",
+    "record_type": "item",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+} 
+        ]]></field>
+    </record>
+
+   <!--  POST UPDATE DATOS DE CLIENTE -->
+    <record id="nextconnector_template_query_normalize_data_customer" model="nextconnector.template_query">
+        <field name="code">normalize_data_customer</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Normaliza Datos de Cliente</field>
+        <field name="model" ref="base.model_res_partner"/>
+        <field name="template_content"><![CDATA[
+#NORMALIZACION DE CODIGO DE PAIS
+pais = env['res.country'].search([('code','=',record["country_id"])])
+record["country_id"] = pais.id
+
+#record["l10n_latam_identification_type_id"] = int(record["l10n_latam_identification_type_id"])
+
+
+json_data = {}
+rec = env['res.partner'].search([('nxt_id_erp','=',record["nxt_id_erp"])])
+
+if record["recordtype"] == "address":
+  record["parent_id"] = rec.id
+  del record["vat"]
+  #del record["name"]
+  del record["nxt_id_erp"]
+  rec = env['res.partner'].search([('street','=',record["street"]), ('type','=',record["type"])])
+else:
+  del record["type"]
+
+del record["recordtype"]
+del record["nombre_direccion"]
+del record["county"]
+  
+if rec :
+    result = rec.write(record)
+    post_type = "write"
+    _logger.error("Update cliente !  id:" + str(result) + " - " + str(record))
+else:
+    result = env['res.partner'].create(record)
+    post_type = "create"
+    _logger.error("Create cliente !  id:" + str(result) + " - " + str(record))
+
+json_data = {
+    "condition" : post_type,
+    "record" : record
+}
+        ]]></field>
+    </record>
+
+
+    <!-- STOCK DE ARTICULOS -->
+    <record id="nextconnector_template_query_get_stock_products" model="nextconnector.template_query">
+        <field name="code">stock_products</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Stock de Articulos</field>
+        <field name="model" ref="product.model_product_template"/>
+        <field name="template_content"><![CDATA[
+query = """
+SELECT  T0."ItemCode" AS "nxt_id_erp",
+        CAST((T1."OnHand" - T1."IsCommited" + T1."OnOrder") AS NVARCHAR(20)) AS "qty_done",
+        CAST(T1."AvgPrice" AS NVARCHAR(20))  AS "avg_price"
+		--,T1."WhsCode"
+    FROM OITM T0 
+        INNER JOIN OITW T1 ON T0."ItemCode" = T1."ItemCode" 
+        INNER JOIN OWHS T2 On T1."WhsCode"=T2."WhsCode"
+WHERE	T1."WhsCode" IN ({id}) 
+      AND (T1."OnHand" - T1."IsCommited" + T1."OnOrder") > 0 
+      AND (T0."QryGroup11" = 'Y' 
+		  OR T0."QryGroup12" = 'Y')
+""".format(id="'10PTD'")
+
+json_data = {
+    "id": "",
+    "record_type": "items",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+}
+        ]]></field>
+    </record>   
+
+    <!-- POST UPDATE STOCK DE ARTICULOS -->
+    <record id="nextconnector_template_query_get_normalize_stock_products" model="nextconnector.template_query">
+        <field name="code">normalize_stock_products</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Normaliza Stock de Articulos</field>
+        <field name="model" ref="product.model_product_template"/>
+        <field name="template_content"><![CDATA[
+
+from datetime import datetime
+#CREO AJUSTE DE INVENTARIO
+inv_ref = "AJUSTE DE INVENTARIO DESDE ERP"
+inv_adjs = env['stock.inventory'].create({"accounting_date":datetime.today(), 
+            "prefill_counted_quantity": 'zero', "company_id": 1 , "start_empty": True,
+            "name":inv_ref
+            })
+lines = []
+
+product_list_odoo = env['product.product'].with_context(warehouse=1).search([]) 
+for product_odoo in product_list_odoo :
+  qty_done = 0
+  for row in record["data"] :
+      #product_erp = env['product.product'].search([('nxt_id_erp','=',row["nxt_id_erp"]), ('type','=',"product")])
+      if row["nxt_id_erp"] != product_odoo.nxt_id_erp:
+        continue
+      qty_done = row["qty_done"]
+      break
+
+  qty_difference = float(qty_done) - float(product_odoo.qty_available)
+  #SI NO EXISTE DIFERENCIA NO REALIZA AJUSTE
+  if qty_difference == 0 :
+    continue
+  
+  #SI LA DIFERENCIA ES NEGATIVA
+  if qty_difference < 0 :
+    warehouse_to = 8 #BODEGA POR DEFECTO
+    warehouse_from = 14 #BODEGA DE AJUSTE
+  else:
+    warehouse_from = 8 #BODEGA DE AJUSTE
+    warehouse_to = 14 #BODEGA POR DEFECTO
+    
+    
+  lines.append({
+          'name': inv_ref,
+          'product_id': product_odoo.id,
+          'product_uom': 1,
+          'product_uom_qty': abs(qty_difference),
+          'date': datetime.now(),
+          'company_id': 1,
+          'inventory_id': inv_adjs.id,
+          'state': 'confirmed',
+          'location_id': warehouse_to,
+          'location_dest_id':warehouse_from,
+          'move_line_ids': [(0, 0, {
+              'product_id': product_odoo.id,
+              'product_uom_qty': 0,  # bypass reservation here
+              'product_uom_id': 1,
+              'qty_done': abs(qty_difference),
+              'location_id': warehouse_to,
+              'location_dest_id': warehouse_from
+          })]
+      })
+#
+condition = "false"
+if len(lines) > 0 :
+  env['stock.move'].create(lines)
+  inv_adjs.write({'state': 'done'})
+  inv_adjs.post_inventory()
+  _logger.info("Create stock inventory :" + str(inv_adjs.id))
+  condition = "create"
+else:
+  inv_adjs.unlink()
+
+json_data = {
+    "condition" : condition,
+    "record" : record
+}
+    ]]></field>
+    </record>
+
+
+
+ <!-- LISTA DE PRECIOS -->
+    <record id="nextconnector_template_query_get_list_product_pricelist" model="nextconnector.template_query">
+        <field name="code">list_product_pricelist</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Lista de Precios</field>
+        <field name="model" ref="product.model_product_pricelist"/>
+        <field name="template_content"><![CDATA[
+query = """
+SELECT DISTINCT
+		T2."ListName" AS "name"
+		, T2."ListNum" AS "nxt_id_erp"
+		, 75 AS "currency_id"  
+FROM OITM T0 
+INNER JOIN ITM1 t1 ON t0."ItemCode" =  t1."ItemCode"
+INNER JOIN OPLN t2 ON t1."PriceList" = t2."ListNum"
+INNER JOIN OUGP T3 ON T0."UgpEntry" = T3."UgpEntry"
+INNER JOIN UGP1 T4 ON T4."UgpEntry" = T3."UgpEntry" 
+INNER JOIN OUOM T5 ON T5."UomEntry" = T4."UomEntry" AND T5."UomCode" = 'CARTON'
+WHERE 	T1."Price" <> 0
+AND (T0."QryGroup11" = 'Y' OR T0."QryGroup12" = 'Y')
+ORDER BY 1
+""".format()
+json_data = {
+    "id": "",
+    "record_type": "items",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+}
+        ]]></field>
+    </record>
+
+
+   <!--  DATOS DE LISTAS DE PRECIOS -->
+    <record id="nextconnector_template_query_get_data_product_pricelist" model="nextconnector.template_query">
+        <field name="code">data_product_pricelist</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Datos de Lista de Precios</field>
+        <field name="model" ref="product.model_product_pricelist"/>
+        <field name="template_content"><![CDATA[
+#VERIFICACIÓN DE EXISTENCIA DE LISTA DE PRECIOS
+
+rec = env['product.pricelist'].search([('nxt_id_erp','=',record["nxt_id_erp"])])
+if not rec :
+    result = env['product.pricelist'].create(record)
+    _logger.error("Create lista de precios !  pricelist_id:" + str(result) + " - " + str(record))
+    
+query = """ 
+SELECT  T2."ListNum" AS "nxt_id_erp" 
+		--, T2."ListName" AS "name"
+		, T0."ItemCode" AS "product_tmpl_id"
+		--,	T1."Price" AS "PrecioOriginal"
+		--,	T4."BaseQty" AS "Factor"
+		, CAST(T1."Price"*T4."BaseQty" AS VARCHAR(20)) AS "fixed_price"
+FROM OITM T0 
+INNER JOIN ITM1 t1 ON t0."ItemCode" =  t1."ItemCode"
+INNER JOIN OPLN t2 ON t1."PriceList" = t2."ListNum"
+INNER JOIN OUGP T3 ON T0."UgpEntry" = T3."UgpEntry"
+INNER JOIN UGP1 T4 ON T4."UgpEntry" = T3."UgpEntry" 
+INNER JOIN OUOM T5 ON T5."UomEntry" = T4."UomEntry" AND T5."UomCode" = 'CARTON'
+WHERE 	T1."Price" <> 0
+		AND (T0."QryGroup11" = 'Y' OR T0."QryGroup12" = 'Y')
+		AND t2."ListNum" = '{id}'
+ORDER BY 1
+""".format(id=record["nxt_id_erp"])
+
+json_data = {
+    "id": "",
+    "record_type": "item",
+    "fields": [
+        {"name": "query","value": query }
+    ]
+}
+        ]]></field>
+    </record>
+
+   <!--  POST UPDATE DATOS DE LISTAS DE PRECIOS -->
+    <record id="nextconnector_template_query_normalize_product_pricelist" model="nextconnector.template_query">
+        <field name="code">normalize_data_product_pricelist</field>
+        <field name="state">True</field>
+        <field name="description">NextConnector - Normaliza Datos de Lista de Precios</field>
+        <field name="model" ref="product.model_product_pricelist"/>
+        <field name="template_content"><![CDATA[
+pricelist = None
+#SET LISTA DE PRECIO PADRE
+for row in record:
+  pricelist = env['product.pricelist'].search([('nxt_id_erp','=',row["nxt_id_erp"])], limit=1)
+  break
+
+#ELIMINA LINEA DE LISTAS DE PRECIOS  
+pricelist_item = env['product.pricelist.item'].search([('pricelist_id','=',pricelist.id)])  
+for price_line in pricelist_item :
+  price_line.unlink();
+
+#CREA LINEA DE LISTAS DE PRECIOS  
+for row in record:
+  pricelist_item = env['product.template'].search([('nxt_id_erp','=',row["product_tmpl_id"])]) 
+  if pricelist_item:
+    del row["nxt_id_erp"]
+    row["applied_on"] = "1_product"
+    row["compute_price"] = "fixed"
+    row["pricelist_id"] = pricelist.id
+    row["product_tmpl_id"] = pricelist_item.product_variant_id.id
+    result = env['product.pricelist.item'].create(row)
+    post_type = "create"
+    _logger.error("Create linea de listas de precios !  item_id:" + str(result) + " - " + str(row))
+
+
+json_data = {
+    "condition" : post_type,
+    "record" : record
+}
+        ]]></field>
+    </record>
+
+
+</data>
+</odoo>

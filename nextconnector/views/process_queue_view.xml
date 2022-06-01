@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    <!-- Cola de sincronización de registros -->	
+	    <record id="view_nextconnector_process_queue_tree" model="ir.ui.view">
+            <field name="name">Cola de sincronización de registros</field>
+            <field name="model">nextconnector.process_queue</field>
+            <field name="arch" type="xml">
+                <tree string="Cola de sincronización de registros">
+                    <field name="company_id"/>
+                    <field name="model_id"/>
+                    <field name="model"/>
+                    <field name="record_id"/>
+                    <field name="name"/>
+                    <field name="last_write_queue"/>
+                    <field name="last_sync"/>
+                    <field name="count_sync"/>
+                    <field name="url_request"/>
+                    <field name="json_request"/>
+                    <field name="json_response"/>
+                    <field name="message_sync"/>
+                    <field name="nxt_id_erp"/>
+                    <field name="nxt_sync"/>
+                </tree>
+            </field>
+	    </record>        
+	    <record id="view_nextconnector_process_queue_form" model="ir.ui.view">
+            <field name="name">Cola de sincronización de registros</field>
+            <field name="model">nextconnector.process_queue</field>            
+            <field name="arch" type="xml">
+                <form string="Cola de sincronización de registros">
+                <sheet>
+                    <group>
+                        <field name="company_id"/>
+                        <field name="model_id"/>
+                        <field name="model"/>
+                        <field name="record_id"/>
+                        <field name="name"/>
+                        <field name="last_write_queue"/>
+                        <field name="last_sync"/>
+                        <field name="count_sync"/>
+                        <field name="url_request"/>
+                        <field name="message_sync"/>
+                        <field name="nxt_id_erp"/>
+                        <field name="nxt_sync"/>
+                    </group>
+                    <notebook>
+                        <page string="JSON Request" name='template_content' autofocus="autofocus">
+                            <field name="json_request" widget="ace" options="{'mode': 'python'}"/>
+                        </page>
+                        <page string="JSON Response" name='template_content' autofocus="autofocus">
+                            <field name="json_response" widget="ace" options="{'mode': 'python'}"/>
+                        </page>
+                    </notebook>
+                </sheet>                
+                </form>	
+            </field>
+	    </record>        
+
+	    <record model="ir.actions.act_window" id="nextconnector.process_queue_action">
+		    <field name="name">Cola de sincronización de registros</field>
+		    <field name="res_model">nextconnector.process_queue</field>
+		    <field name="view_mode">tree,form</field>
+	    </record>
+
+        <!--SUBSUBMENU: PLANTILLAS DE CONFIGURACION -->
+        <record id="nextconnector.menu_process_queue" model="ir.ui.menu">
+            <field name="name">Cola de sincronización de registros</field>
+            <field name="action" ref="nextconnector.process_queue_action"/>
+            <field name="parent_id" ref="nextconnector.menu_settings"/>
+        </record>
+      
+    </data>
+</openerp>

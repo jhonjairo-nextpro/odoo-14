@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_nextconnector_sales_rep_form" model="ir.ui.view">
+        <field name="name">Form view Nextconnector Sales Rep</field>
+        <field name="model">nextconnector.sales_rep</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+        <form>
+          <sheet>
+            <group>
+              <field name="nxt_id_erp"/>
+              <field name="nxt_name"/>
+              <field name="nxt_user"/>  
+            </group>
+          </sheet>
+        </form>
+        </field>
+    </record>
+
+    <!--VISTA LISTA VENDEDORES-->
+  <record id="view_tree_nextconnector_sales_rep" model="ir.ui.view">
+    <field name="name">Tree view Nextconnector Sales Rep</field>
+    <field name="model">nextconnector.sales_rep</field>
+    <field name="priority">1</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="nxt_id_erp"/>
+        <field name="nxt_name"/>
+        <field name="nxt_user"/>  
+      </tree>
+    </field>
+  </record>
+
+</odoo>
